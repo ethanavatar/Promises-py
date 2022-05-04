@@ -14,21 +14,22 @@ class AggregatePromiseException(Exception):
         self.message = f'All promises rejected: {exceptions}'
 
 class Promise:
-    def __init__(self, callback):
+    def __init__(self, callback=None):
         self.callback = callback
         self.thenCallbacks = []
         self.catchCallbacks = []
         self.value = None
         self.state = STATE.PENDING
 
-        try:
-            callback(self._onSuccess, self._onFail)
-        except Exception as e:
-            self._onFail(e)
+        if callback:
+            try:
+                callback(self._onSuccess, self._onFail)
+            except Exception as e:
+                self._onFail(e)
 
     @classmethod
     def resolve(cls, value):
-        return Promise(lambda resolve: resolve(value))
+        return Promise(lambda resolve, reject: resolve(value))
 
     @classmethod
     def reject(cls, e):
@@ -63,7 +64,7 @@ class Promise:
         results = []
         commpleted = 0
         return Promise(
-            lambda resolve:
+            lambda resolve, reject:
                 cls._gatherAllSettled(promises, results, commpleted, resolve)
         )
 
@@ -79,7 +80,7 @@ class Promise:
             )
 
     @staticmethod
-    def _completeAllSettled(value, completed, results, total, resolve):
+    def _completeAllSettled(results, completed, total, resolve):
         completed += 1
         if completed == total:
             resolve(results)
@@ -168,7 +169,7 @@ class Promise:
             reject(e)
 
     def catch(self, callback):
-        self.then(None, callback)
+        return self.then(None, callback)
 
     def lastly(self, callback):
         self.then(

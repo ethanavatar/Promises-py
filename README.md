@@ -1,4 +1,4 @@
-# Python Promises
+# Promises-py
 
 A notorious JS feature written in Python
 
